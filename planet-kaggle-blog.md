@@ -2,7 +2,7 @@
 
 ![](imgs/banner.jpg)
 
-### Data and Tagging Task
+### Amazon Data
 
 ![](imgs/chipdesc.jpg)
 <p align="center">source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/data">Planet</a></p>
@@ -20,15 +20,11 @@ Planet provided over 100,000 chips from large images taken by a flock of satelli
 
 The tags were varied in frequency. Primary was by far the most common tag, appearing in nearly 39,000 of the provided chips. Rare labels, on the other hand, were a source of concern. There were so few samples of rare labels, like conventional mining and blow down, that after splitting a portion of training data into a validation hold-out set, it was possible to have less than 100 data points for some rare tag versus the thousands of examples of images containing primary rainforest. Without teaching the model to pay more attention to rarer labels, uncommon features would be difficult to learn and commonly missed or wrongly predicted by the model.
 
+### Our Approach
 
-![](imgs/tags_correlation.png)
-<p align="center">source: <a href="https://www.kaggle.com/anokas/data-exploration-analysis">anokas</a></p>
+As with many Kaggle competitions involving image identifcation, there are multiple stages in the prediction process that can be optimized for better accuracy. Improvements can be made in pre-processing the training data, switching or combining model architectures, adjusting optimizers, learning rates and augmenting the testing data. In our best performing experiments, we normalized the provided images to be within a standardized range and using range of image augmentations during the testing phase. Rotation, zooming in/out, flipping and cropping increase the quality of prediction in some cases. We used a multi-architecture ensemble that combined the predicted labels for the test chips across ResNet, Inception and DenseNet convolutional neural networks with an Adam optimizer, cyclic learning rate and binary cross-entropy loss function.
 
-### Immediate Plan of Attack
-
--briefly, data generation/pre and post processing techniques
--the purpose of rastervision with usage of conv neural nets + ensembling
--avoiding overfitting
+Although the submissions to the competition were ranked using the F2 score, we decided to not use this method. The F2 scoring metric tended to overlook mislabeling in underrepresented tags. If we trained our model according to this metric, there would be less incentive for correctly identifying the rarer labels. Our method was conducted with the premise of fairly differentiating and labeling the uncommon tags. Often, the goal in using machine tagging is to teach the model to effectively and accurately identify interesting and anomalous features in a set of largely similar data.
 
 ### Misconfigured Labels
 
@@ -65,7 +61,7 @@ More details on this approach can be found in bestfitting's [solution summary](h
 
 show scores of the winner, talk a bit about dehazing, don't know how much it helps
 
-#### Other model architectures
+#### Less Successful Experiments
 * [ResNet50](https://arxiv.org/abs/1512.03385)
 * [Inception v3](https://arxiv.org/abs/1512.00567)
 * [DenseNet121](https://arxiv.org/abs/1608.06993)
