@@ -1,24 +1,27 @@
-## Scene Tagging and the Planet Kaggle Competition
-
-### The Task
+# Scene Tagging and the Planet Kaggle Competition
 
 ![](imgs/banner.jpg)
 
-This past summer, Planet launched the *Understanding the Amazon from Space* Kaggle competition. We participated in this competition using Raster Vision, a system for analyzing aerial and satellite imagery using deep learning. Raster Vision works across several different tasks, including semantic segmentation, object detection and scene tagging as well as a range of datasets. The varied data within the Amazon competition gave us a challenging opportunity to make a robust scene tagging functionality.
-
-Planet provided over 100,000 chips from large images taken by a flock of satellites over the Amazon basin in 2016. These 40,000 train and 60,000 test chips were given in both 3-band RGB JPEG and four band IR-RBG TIFF formats. The goal of tagging is to infer a set of labels for a given chip. For the Amazon images, there were 17 possible tags, broadly split into three categories.
-
-1) atmospheric labels: clear, partly cloudy, cloudy and hazy
-2) common labels: primary, water, habitation, agriculture, road, cultivation and bare ground
-3) rare labels: artisinal mine, blooming, blow down, conventional mine, selective logging and slash burn.
+### Data and Tagging Task
 
 ![](imgs/chipdesc.jpg)
 <p align="center">source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/data">Planet</a></p>
 
-The tags were quite varied in frequency. Primary was by far the most common tag for an image and often appeared alongside the X and Y tags. Rare labels, on the other hand, were a source of concern. There were so few samples of certain rare labels that after splitting a portion of training data into a validation hold-out set, it was possible to have less than 100 data points for some rare tag versus the thousands of examples of images containing primary rainforest. Without somehow focusing our models on paying more attention to rarer labels, those anomalous features could easily be washed away.
-![](imgs/tags_correlation.png)
+This past summer, Planet launched the *Understanding the Amazon from Space* Kaggle competition. We participated in this competition using Raster Vision, a system for analyzing aerial and satellite imagery using deep learning. Raster Vision works across several different tasks, including semantic segmentation, object detection and scene tagging as well as a range of datasets. The varied data within the Amazon competition gave us a challenging opportunity to make a robust scene tagging functionality.
+
+Planet provided over 100,000 chips from large images taken by a flock of satellites over the Amazon basin in 2016. These 40,000 train and 60,000 test chips were given in both 3-band RGB JPEG and four band IR-RBG TIFF formats. The goal of tagging is to infer a set of labels for a given chip. For the Amazon images, there were 17 possible tags, which could be broadly split into three categories.
+
+1. **atmospheric labels**: clear, partly cloudy, cloudy and hazy
+2. **common labels**: primary, water, habitation, agriculture, road, cultivation and bare ground
+3. **rare labels**: artisinal mine, blooming, blow down, conventional mine, selective logging and slash burn.
 
 ![](imgs/tags_hist.png)
+<p align="center">source: <a href="https://www.kaggle.com/anokas/data-exploration-analysis">anokas</a></p>
+
+The tags were varied in frequency. Primary was by far the most common tag, appearing in nearly 39,000 of the provided chips. Rare labels, on the other hand, were a source of concern. There were so few samples of rare labels, like conventional mining and blow down, that after splitting a portion of training data into a validation hold-out set, it was possible to have less than 100 data points for some rare tag versus the thousands of examples of images containing primary rainforest. Without teaching the model to pay more attention to rarer labels, uncommon features would be difficult to learn and commonly missed or wrongly predicted by the model.
+
+
+![](imgs/tags_correlation.png)
 <p align="center">source: <a href="https://www.kaggle.com/anokas/data-exploration-analysis">anokas</a></p>
 
 ### Immediate Plan of Attack
@@ -31,13 +34,15 @@ The tags were quite varied in frequency. Primary was by far the most common tag 
 
 Each of the chips were labeled with ground truth tags through crowd-sourced labor. The ground truth could then be used to teach models the correct labels.  In order for this task to perform accurately, it is crucial that the ground truth be actually truthful. In an ideal world, the criteria for a label is clear and distinct to humans and similarly obvious to trained neural networks. Unfortunately, Planet's dataset had noticeable amounts of ambiguous and, even worse, clearly incorrect labels. For example, we can see that the network often mistakes when to label a chip with the tag `agriculture`. However, if we examine the ground truth tags for each chip, it's not obvious that the human classifications are correct either.
 
-When we examined the data further, there was far more reason to be alarmed than simple human error.
+When we examined the data further, we found far more reason to be alarmed than simple human error. Many teams, including our own, attempted to train our models using exclusively TIFF chips. Although initial experiments with the JPEG images returned promising results, the data format contains only RGB, i.e. human-visible bands of light. TIFF images had an additional infrared band, which is commonly used to calculate amounts of vegetation (NDVI) or water (NDWI) within an image. By using the infrared band, we had [previously](https://www.azavea.com/blog/2017/05/30/deep-learning-on-aerial-imagery/) been able to use Raster Vision to generate excellent results using semantic segmentation on ISPRS Potsdam data.
+
+However, the experiments using TIFF data significantly underperformed the same models using JPEG data. 
+
+![Example tagging](imgs/broken.jpg)
+<p align="center">source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/discussion/33375">Heng CherKeng</a></p>
 
 The resulting noise proved to be a major challenge in producing accurate results with even our most complex models using either TIFF or JPEG files.
 
-### Issues with Misconfigured Labels on .tif vs .jpg
-
--discuss problem of ambiguous/inconsistent labeling
 -variation between tif and jpg, therefore unavailability of IR band
 	-can discuss prior success with IRRG here
 
