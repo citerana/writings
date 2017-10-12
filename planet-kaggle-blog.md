@@ -2,8 +2,8 @@
 
 ### The Task
 
-![](imgs/tag_correlation.png)
-![](imgs/tags.png)
+![](imgs/tag_correlation.png#center)
+![](imgs/tags.png#center)
 *source: ![anokas](https://www.kaggle.com/anokas/data-exploration-analysis)*
 
 Raster Vision is a system for analyzing aerial and satellite imagery using deep learning and works across several different tasks and datasets. These tasks include semantic segmentation, object detection and scene tagging. As part of building a robust tagging component, we competed in Planet's Understanding the Amazon from Space Kaggle competition.
@@ -89,4 +89,3 @@ Beating random predictor
 The repository for Raster Vision can be found [here](https://github.com/azavea/raster-vision/) and is open to the public.
 
 Nature of kaggle competitions, improving results against private leaderboard means not overfitting/aka generalization results through creating many models, identifying accurate but disjoint predictions and then averaging these results together.
-
