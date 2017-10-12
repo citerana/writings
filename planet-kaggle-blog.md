@@ -4,7 +4,7 @@
 
 ![](imgs/tags_correlation.png)
 
-![](imgs/tags.png)
+![](imgs/tags_hist.png)
 <p align="center">source: <a href="https://www.kaggle.com/anokas/data-exploration-analysis">anokas</a></p>
 
 Raster Vision is a system for analyzing aerial and satellite imagery using deep learning and works across several different tasks and datasets. These tasks include semantic segmentation, object detection and scene tagging. As part of building a robust tagging component, we competed in Planet's Understanding the Amazon from Space Kaggle competition.
