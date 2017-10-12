@@ -1,16 +1,17 @@
-##Scene Tagging and the Planet Kaggle Competition
+## Scene Tagging and the Planet Kaggle Competition
 
-###The Task
+### The Task
 
-(ADD IMAGE FROM KAGGLE SITE HEADER)
-(ADD IMAGE OF HISTOGRAM OF COMMON TAGS)
+![](imgs/tag_correlation.png)
+![](imgs/tags.png)
+*source: ![anokas](https://www.kaggle.com/anokas/data-exploration-analysis)*
 
 Raster Vision is a system for analyzing aerial and satellite imagery using deep learning and works across several different tasks and datasets. These tasks include semantic segmentation, object detection and scene tagging. As part of building a robust tagging component, we competed in Planet's Understanding the Amazon from Space Kaggle competition.
 
 The competition provided approximately 40,000 train and 60,000 test images in both 3 band JPEG and four band TIFF formats taking by a flock of satellites over the year of 2016. Each of the chips were labeled with the ground truth tags by hand, primarily through crowd-sourced labor. This meant that the dataset had noticeable amounts of ambiguous and clearly incorrect labels for both sets of images. The resulting noise proved to be an additional challenge in producing accurate results with the Amazon data.
 
-![Chip description](posts/chipdesc.jpg)
-Caption: [Source](https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/data)
+![](imgs/chipdesc.jpg)
+*source: ![Planet](https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/data)*
 
 The goal of tagging is to infer a set of labels for each image. For this competition, there were 17 possible tags, broadly split into three categories. 1) atmospheric labels: clear, partly cloudy, cloudy and hazy 2) common labels: primary, water, habitation, agriculture, road, cultivation and bare ground 3) rare labels: artisinal mine, blooming, blow down, conventional mine, selective logging and slash burn.
 
@@ -34,7 +35,7 @@ In order for this task to perform accurately, it is important that the labeling 
 
 Here are some examples of training chips with labels predicted by our best single-model network.
 
-![Example tagging](posts/debug_plots_labeled.png)
+![Example tagging](imgs/debug_plots_labeled.png)
 
 In the above figure, the ground truth tags (ie. tagged by hand) for the Planet Kaggle dataset are bolded. Green bolded tags are correct. Unbolded and uncolored tags mean that they have been incorrectly predicted for the chip. Red bolded tags are ones missed by the network prediction.
 
@@ -88,3 +89,4 @@ Beating random predictor
 The repository for Raster Vision can be found [here](https://github.com/azavea/raster-vision/) and is open to the public.
 
 Nature of kaggle competitions, improving results against private leaderboard means not overfitting/aka generalization results through creating many models, identifying accurate but disjoint predictions and then averaging these results together.
+
