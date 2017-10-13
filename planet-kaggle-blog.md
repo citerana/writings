@@ -9,7 +9,7 @@
 
 This past summer, Planet launched the *Understanding the Amazon from Space* Kaggle competition. We participated in this competition using Raster Vision, a system for analyzing aerial and satellite imagery using deep learning. Raster Vision works across several different tasks, including semantic segmentation, object detection and scene tagging as well as a range of datasets. The varied data within the Amazon competition gave us a challenging opportunity to make a robust scene tagging functionality.
 
-Planet provided over 100,000 chips from large images taken by a flock of satellites over the Amazon basin in 2016. These 40,000 train and 60,000 test chips were given in both 3-band RGB JPEG and four band IR-RBG TIFF formats. The goal of tagging is to infer a set of labels for a given chip. For the Amazon images, there were 17 possible tags, which could be broadly split into three categories.
+Planet provided over 100,000 chips from large images taken by a flock of satellites over the Amazon basin in 2016. These 40,000 training and 60,000 testing chips were given in both 3-band RGB JPEG and four band IR-RBG TIFF formats. The goal of tagging is to infer a set of labels for a given chip. For the Amazon images, there were 17 possible tags, which could be broadly split into three categories.
 
 1. **atmospheric labels**: clear, partly cloudy, cloudy and hazy
 2. **common labels**: primary, water, habitation, agriculture, road, cultivation and bare ground
@@ -17,10 +17,10 @@ Planet provided over 100,000 chips from large images taken by a flock of satelli
 
 Each of the chips were labeled with ground truth tags through crowd-sourced labor. The ground truth is used to train models on the correct labels for a given chip. A well trained network can accurately predict the labels on a previously unseen chip.
 
-![](imgs/tags_hist.png)
+<p align="center"><img src="imgs/tags_hist.png" alt="Tag histogram"/></p>
 <p align="center">source: <a href="https://www.kaggle.com/anokas/data-exploration-analysis">anokas</a></p>
 
-For this dataset, the tags were quite varied in frequency. Primary was by far the most common tag, appearing in nearly 39,000 of the provided chips. Rare labels, on the other hand, were a source of concern. There were so few samples of rare labels, like conventional mining and blow down, that after splitting a portion of training data into a validation hold-out set, it was possible to have less than 100 data points for some rare tag versus the thousands of examples of images containing primary rainforest. Without teaching the model to pay more attention to rarer labels, uncommon features would be difficult to learn and commonly missed or wrongly predicted by the model.
+For this dataset, the tags were quite varied in frequency. Primary was by far the most common tag, appearing in nearly 39,000 of the provided chips. Rare labels, on the other hand, were a source of concern. There were so few samples of rare labels, like conventional mining and blow down, that after splitting a portion of training data into a validation hold-out set, it was possible to have less than 100 data points for some rare tags versus the thousands of examples of images containing primary rainforest. Without teaching the model to pay more attention to rarer labels, uncommon features would be difficult to learn and commonly missed or wrongly predicted by the model.
 
 ### Our Approach
 
@@ -29,7 +29,7 @@ Here are some examples of training chips with labels predicted by our best singl
 ![Example tagging](imgs/debug_plots_labeled.png)
 <p align="center">source: <a href="https://github.com/azavea/raster-vision/">Raster Vision</a></p>
 
-In the above figure, the ground truth tags (ie. tagged by hand) for the Planet Kaggle dataset are bolded. Green bolded tags are correct. Unbolded and uncolored tags mean that they have been incorrectly predicted for the chip. Red bolded tags are ones missed by the network prediction. As with many Kaggle competitions involving image identifcation, there are multiple stages in the prediction process that can be optimized for better accuracy. Improvements can be made in pre-processing the training data, switching or combining model architectures, adjusting optimizers, learning rates and augmenting the testing data. We placed 23nd overall out of nearly a thousand teams with a private leaderboard prediction accuracy of 93.154% using the following techniques.
+In the above figure, the ground truth tags (ie. tagged by hand) for the Planet Kaggle dataset are bolded. Green bolded tags are correct. Unbolded and uncolored tags mean that they have been incorrectly predicted for the chip. Red bolded tags are ones missed by the network prediction. As with many Kaggle competitions involving image identifcation, there are multiple stages in the prediction process that can be optimized for better accuracy. Improvements can be made in pre-processing the training data, switching or combining model architectures, adjusting optimizers, learning rates and augmenting the testing data. We placed 23rd overall out of nearly a thousand teams with a private leaderboard prediction accuracy of 93.154% using the following techniques.
 
 We normalized the provided images to be within a standardized range and used a range of image augmentations during the testing phase. Rotation, zooming in/out, flipping and cropping increase the quality of prediction in some cases. We used a multi-architecture ensemble that took a majority vote over the predicted labels across 15 convolutional neural networks: (5) [ResNet50](https://arxiv.org/abs/1512.03385), (5) [Inception v3](https://arxiv.org/abs/1512.00567) and (5) [DenseNet121](https://arxiv.org/abs/1608.06993). These models were all trained using Adam as the optimizer, a cyclically decaying learning rate and binary cross-entropy as the loss function.
 
@@ -49,7 +49,7 @@ First, there were differences in alignment between the TIFF and JPEG version of 
 
 Secondly, a small portion of the TIFF and JPEG chips were blatantly disimilar.
 
-![Example tagging](imgs/broken.jpg)
+<p align="center"><img src="imgs/broken.jpg" alt="Bad chips" height=550px /></p>
 <p align="center">source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/discussion/32453">Heng CherKeng</a></p>
 
 The left hand column displays the JPEG chip, while the right hand columns display the TIFF chip under two different visualizations. In each case, the tags indicate the chip has, among others, the `road` tag. We can clearly see that in the TIFF chips were taken at some other time or location and clearly do not have a road within the image. If we teach a model that a image which does not have a road should be labeled road, this is a problem.
