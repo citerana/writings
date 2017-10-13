@@ -1,4 +1,4 @@
-# The Planet Kaggle
+## The Planet Kaggle
 
 ![](imgs/banner.jpg)
 
@@ -45,35 +45,29 @@ When we examined the data further, we found far more reason to be alarmed than s
 
 However, after conducting a series of experiments using TIFF data we discovered that the results often drastically underperformed the same models using JPEG data. This bizarre behavior was likely the result of a couple factors.
 
-1. Alignment
+First, there were differences in alignment between the TIFF and JPEG version of the same chip. When the chips were first created from the large satellite scenes, a portion of the chips were slightly misaligned between the two file versions. This misalignment didn't generally impact the correctness of the provided ground truth label but in rare cases, would render a label incorrect for one version of the chip. For example, cropping the leftmost 10% of an image might remove a river from the chip and therefore make the truth label of water incorrect for that chip.
 
-2. Blatantly Different Images
+Secondly, a small portion of the TIFF and JPEG chips were blatantly disimilar.
 
 ![Example tagging](imgs/broken.jpg)
-<p align="center">source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/discussion/33375">Heng CherKeng</a></p>
+<p align="center">source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/discussion/32453">Heng CherKeng</a></p>
 
-The resulting noise proved to be a major challenge in producing accurate results with even our most complex models using either TIFF or JPEG files.
+The left hand column displays the JPEG chip, while the right hand columns display the TIFF chip under two different visualizations. In each case, the tags indicate the chip has, among others, the `road` tag. We can clearly see that in the TIFF chips were taken at some other time or location and clearly do not have a road within the image. If we teach a model that a image which does not have a road should be labeled road, this is a problem.
 
--creating separate networks for softmax versus sigmoid, one hot labeling
--boosting presence of rarer labels
-
--identifying best optimizer:
-	-sgd? Adam? cyclic? Yellowfin?
-	- is hand tuning worth
-
-Kaggle competitions are often won by very slim margins. In the case of the Amazon rainforest data, we spent a significant amount of development time trialing different methods of preprocessing and postprocessing the images .
-
-Beating random predictor
+In almost all these cases, the chip that had the incorrect label was the TIFF chip. Our suspicion is that the crowd sourced labelers were by and large generating tags using only the JPEG chips. While the labelers were likely given both file versions for the chips, viewing the JPEG version of the chips is easier. The TIFF images required some normalization to make it visible to the human eye. As an unfortunate result, any discrepancies between the file versions favored the JPEG chips. Although the exact extent of misconfigured labels between the file types is unclear, dozens of such conflicts were easily spotted throughout the dataset. The resulting noise proved to be a major challenge in producing accurate results with even our most complex models using either TIFF files.
 
 ### Discussion
 
+Kaggle competitions are often won by very slim margins. In the case of the Amazon rainforest data, we spent a significant amount of development time trialing different methods of preprocessing and postprocessing the images.
+
+Nature of kaggle competitions, improving results against private leaderboard means not overfitting/aka generalization results through creating many models, identifying accurate but disjoint predictions and then averaging these results together.
+
+Many techniques that we implemented in Raster Vision and trialed did not increase our accuracy on the Amazon dataset. Sometimes it takes a very clever idea or breakthrough to push the accuracy of a predictive model past all its competitors. In this particular Kaggle competition, vanilla machine learning solutions were the best performing.
+-creating separate networks for softmax versus sigmoid, one hot labeling
+-boosting presence of rarer labels
 -f2 score didn't incentivize the right behavior
--some competitions are won by clever ideas but simple, vanilla was just the best
--5 points of we tried this method --> and this was the score relationship
-		- create a graphic describing this
 
 ### Future Work
 
-The open-source project repository for Raster Vision can be found [here](https://github.com/azavea/raster-vision/).
+The open-source project repository for Raster Vision can be found [here](https://github.com/azavea/raster-vision/). Our current work Raster Vision is developing and improving accurate and scalable object detection, with a special focus on aerial and satellite imagery.
 
-Nature of kaggle competitions, improving results against private leaderboard means not overfitting/aka generalization results through creating many models, identifying accurate but disjoint predictions and then averaging these results together.
