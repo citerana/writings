@@ -66,4 +66,4 @@ Kaggle competitions are often won by very slim margins. In the case of the Amazo
 
 ### Future Work
 
-The open-source project repository for Raster Vision can be found [here](https://github.com/azavea/raster-vision/). Our current work Raster Vision is developing and improving accurate and scalable object detection, with a special focus on aerial and satellite imagery.
+The open-source project repository for Raster Vision can be found [here](https://github.com/azavea/raster-vision/). We are currently developing and improving an accurate and scalable object detection functionality in Raster Vision, with a particular focus on strong performance for aerial and satellite imagery.
