@@ -17,8 +17,8 @@ Planet provided over 100,000 chips from large images taken by a flock of satelli
 
 Each of the chips were labeled with ground truth labels through crowd-sourced labor. A well trained network can accurately predict the labels on a previously unseen chip.
 
-<p align="center"><img src="imgs/tags_hist.png" alt="Label histogram"/></p>
-<p align="center">source: <a href="https://www.kaggle.com/anokas/data-exploration-analysis">anokas</a></p>
+<p align="center"><img src="imgs/label_hist.png" alt="Label histogram"/></p>
+<p align="center">source: <a href="https://github.com/planetlabs/planet-amazon-deforestation/blob/master/planet_chip_examples.ipynb">anokas</a></p>
 
 For this dataset, the labels were quite varied in frequency. Primary was by far the most common label, appearing in nearly 39,000 of the provided chips. Rare labels, on the other hand, were a source of concern. There were so few samples of rare labels, like conventional mining and blow down, that after splitting a portion of training data into a validation hold-out set, it was possible to have less than 100 data points for some rare labels versus the thousands of examples of images containing primary rainforest. Uncommon features can be very difficult to learn we expected that they would often be wrongly predicted by the model.
 
