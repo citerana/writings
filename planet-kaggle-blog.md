@@ -1,69 +1,82 @@
-## The Planet Kaggle
-
+# Predicting Land Use in the Amazon using Deep Learning
+By Annie Zhao and Lewis Fishgold
 ![](imgs/banner.jpg)
 
-### Amazon Basin Data
+## The Planet Kaggle Contest
 
 ![](imgs/chipdesc.jpg)
-<p align="center">source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/data">Planet</a></p>
+<p align="center">Source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/data">Planet</a></p>
 
-This past summer, Planet launched the *Understanding the Amazon from Space* Kaggle competition. We participated in this competition using Raster Vision, a system for analyzing aerial and satellite imagery using deep learning. Raster Vision works across several different tasks, including semantic segmentation, object detection and scene tagging as well as a range of datasets. The varied data within the Amazon competition gave us a challenging opportunity to add scene tagging functionality.
+This past summer, [Planet](http://www.planet.com) launched the [Understanding the Amazon from Space](https://www.kaggle.com/c/planet-understanding-the-amazon-from-space)  Kaggle competition. They provided over 100,000 chips from large images taken by a flock of satellites over the Amazon basin in 2016. These 40,000 training and 60,000 testing chips were given in both 3-band RGB JPEG and four band IR-RBG TIFF formats. Using crowd-sourced labor, each training chip was assigned a set of ground truth labels indicating the types of land use appearing in the chip. The goal of the contest was to implement a classifier to predict the set of labels for each of the testing chips. The quality of the predictions was measured using the F2 score, which is a weighted average of precision and recall, with greater emphasis on recall.
 
-Planet provided over 100,000 chips from large images taken by a flock of satellites over the Amazon basin in 2016. These 40,000 training and 60,000 testing chips were given in both 3-band RGB JPEG and four band IR-RBG TIFF formats. The goal of tagging is to infer a set of labels for a given chip. For the Amazon images, there were 17 possible labels, which could be broadly split into three categories.
+For the Amazon images, there were 17 possible labels, which could be broadly split into three categories.
 
 1. **atmospheric labels**: clear, partly cloudy, cloudy and hazy
 2. **common labels**: primary, water, habitation, agriculture, road, cultivation and bare ground
 3. **rare labels**: artisinal mine, blooming, blow down, conventional mine, selective logging and slash burn.
 
-Each of the chips were labeled with ground truth labels through crowd-sourced labor. A well trained network can accurately predict the labels on a previously unseen chip.
+At Azavea, we have been using deep learning to analyze satellite and aerial imagery as part of the [Raster Vision](https://github.com/azavea/raster-vision) project. In a previous [blog post](https://www.azavea.com/blog/2017/05/30/deep-learning-on-aerial-imagery/), we discuss our work on semantic segmentation. This contest provided us with a challenging opportunity to expand our capabilities and experiment with multi-label image classification of satellite imagery.
+
+### Dataset Challenges
+
+#### Ambiguous and Rare Labels
+
+Ideally, the criteria for assigning a label are clear and distinct, and consensus about the ground truth labeling is easily attained. Unfortunately, the Planet dataset has many ambiguous labels which are difficult for people to assign.
+
+In addition, the labels in this dataset were quite varied in frequency. The `primary` label was by far the most common, appearing in around 40,000 of the provided chips. On the other hand, rare labels like `conventional mining` and `blow down` only appeared a few hundred times each. With so few examples of the rare labels, it was hard to make accurate predictions.
 
 <p align="center"><img src="imgs/label_hist.png" alt="Label histogram"/></p>
-<p align="center">source: <a href="https://github.com/planetlabs/planet-amazon-deforestation/blob/master/planet_chip_examples.ipynb">anokas</a></p>
+<p align="center">Source: <a href="https://github.com/planetlabs/planet-amazon-deforestation/blob/master/planet_chip_examples.ipynb">anokas</a></p>
 
-For this dataset, the labels were quite varied in frequency. Primary was by far the most common label, appearing in nearly 39,000 of the provided chips. Rare labels, on the other hand, were a source of concern. There were so few samples of rare labels, like conventional mining and blow down, that after splitting a portion of training data into a validation hold-out set, it was possible to have less than 100 data points for some rare labels versus the thousands of examples of images containing primary rainforest. Uncommon features can be very difficult to learn we expected that they would often be wrongly predicted by the model.
+#### Inability to utilize infrared channel
 
-### Our Approach
+Although initial experiments with the JPEG images yielded decent results, the JPEG images are limited in that they only contain RGB channels, i.e. human-visible bands of light.
+The additional infrared band contained in the TIFF images is commonly used to calculate amounts of vegetation (NDVI) or water (NDWI) within an image.
+As the Amazon has significant amounts of both vegetation and water, we expected that the infrared band would contain valuable information that would improve the performance of our models.
 
-Here are some examples of training chips with labels predicted by our best single-model network.
+However, after conducting a series of experiments using TIFF chips we found that the results drastically underperformed the same models trained using JPEG chips. After inspecting the images, we found that many of the TIFF chips are mislabeled. We suspect this is because the TIFF and JPEG chips were often misaligned, and the labeling was based on the JPEG version.
 
-![Example tagging](imgs/debug_plots_labeled.png)
-<p align="center">source: <a href="https://github.com/azavea/raster-vision/">Raster Vision</a></p>
+In many cases, the chips were slightly misaligned between the two versions. This misalignment didn't generally impact the correctness of the provided ground truth label but in rare cases, would render a label incorrect for one version of the chip. For example, cropping the leftmost 10% of an image might remove a river from the chip and therefore make the `water` label incorrect for that chip.
 
-In the above figure, the ground truth labels (ie. tagged by hand) for the Planet Kaggle dataset are bolded. Green bolded labels are correct. Unbolded and uncolored labels mean that they are false positives and have been incorrectly predicted for the chip. Red bolded labels are false negatives and missing from the network prediction. As with many Kaggle competitions involving image analysis, there are multiple stages in the prediction process that can be optimized for better accuracy. Improvements can be made in pre-processing the training data, switching or combining model architectures, adjusting optimizers, learning rates and augmenting the testing data. We placed 23rd overall out of nearly a thousand teams with a private leaderboard prediction F2 score of 0.93154 using the following techniques.
-
-We normalized the provided images to be within a standardized range and used a range of image augmentations during the testing phase. We used a multi-architecture ensemble that took a majority vote over the predicted labels across 15 convolutional neural networks: (5) [ResNet50](https://arxiv.org/abs/1512.03385), (5) [Inception v3](https://arxiv.org/abs/1512.00567) and (5) [DenseNet121](https://arxiv.org/abs/1608.06993). These models were all trained using Adam as the optimizer, a decaying learning rate schedule and binary cross-entropy as the loss function.
-
-The winning Kaggler, bestfitting, obtained a score of 0.93318 with their solution. More details on this approach can be found in bestfitting's [solution summary](http://blog.kaggle.com/2017/10/17/planet-understanding-the-amazon-from-space-1st-place-winners-interview/).
-
-A point of note: submissions to the Kaggle competition were ranked using a potentially misleading version of an F2 score. The competition's scoring metric took the F2 score of each sample as the average rather than the F2 score for each label as the average. As a result, the F2 scoring metric tended to overlook mislabeling in rarer labels. Although the Amazon data simply asked for accurate labeling, we felt that large variation in appearances of certain labels was a key point in this goal. After all, a common application of scene tagging is to generate predictions to be further analyzed for any interesting or anomalous features. If we trained our model according to the F2 scoring metric, we may have obtained a slightly improved leaderboard score, but also increased the difficulty of identifying rarer labels. We can see how this may not be desirable behavior in a case where we may be more interested in the rare images with blooming flowers.
-
-### Incorrect Labels
-
-In order for this task to be performed accurately, it is crucial that the ground truth be genuinely truthful. In an ideal world, the criteria for a label is clear and distinct to humans and similarly obvious to trained neural networks. Unfortunately, Planet's crowd-labeled dataset had many ambiguous and, even worse, clearly incorrect labels. For example, we can see that the network often mistakes when to label a chip with the label `agriculture`. However, if we examine the ground truth labels for each chip, it's not obvious that the human classifications are correct either.
-
-When we examined the data further, we found far more reason to be alarmed than simple human error. Many teams, including our own, attempted to train our models using exclusively TIFF chips. Although initial experiments with the JPEG images returned promising results, the data format contains only RGB, i.e. human-visible bands of light. The additional infrared band provided by the TIFF images is commonly used to calculate amounts of vegetation (NDVI) or water (NDWI) within an image. We had [previously](https://www.azavea.com/blog/2017/05/30/deep-learning-on-aerial-imagery/) used infrared, red and green bands to generate excellent results on [ISPRS Potsdam](http://www2.isprs.org/commissions/comm3/wg4/2d-sem-label-potsdam.html) data with Raster Vision's semantic segmentation task. As the Amazon data has significant amounts of both vegetation and water, it seemed obvious that the infrared band would be invaluable information.
-
-However, after conducting a series of experiments using TIFF data we discovered that the results often drastically underperformed the same models using JPEG data. This bizarre behavior was likely the result of a couple factors.
-
-First, there were differences in alignment between the TIFF and JPEG version of the same chip. When the chips were first created from the large satellite scenes, a portion of the chips were slightly misaligned between the two file versions. This misalignment didn't generally impact the correctness of the provided ground truth label but in rare cases, would render a label incorrect for one version of the chip. For example, cropping the leftmost 10% of an image might remove a river from the chip and therefore make the truth label of water incorrect for that chip.
-
-Secondly, a small portion of the TIFF and JPEG chips were blatantly disimilar.
+In a smaller portion of the TIFF and JPEG chips were blatantly dissimilar.
+In the figure below, the left hand column displays the JPEG chip, while the right hand columns display the TIFF chip under two different visualizations. Each row was labeled with `road`, but in the first and third rows, we can see that the TIFF chips were taken at some other time or location and do not contain a road.
 
 <p align="center"><img src="imgs/broken.jpg" alt="Bad chips" height=550px /></p>
 <p align="center">source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/discussion/32453">Heng CherKeng</a></p>
 
-The left hand column displays the JPEG chip, while the right hand columns display the TIFF chip under two different visualizations. In each case, the labels indicate the chip has, among others, the `road` label. We can clearly see that in the TIFF chips were taken at some other time or location and clearly do not have a road within the image. If we teach a model that a image which does not have a road should be labeled road, this is a problem.
+## Our Approach
 
-In almost all these cases, the chip that had the incorrect label was the TIFF chip. Our suspicion is that the crowd sourced labelers were by and large generating labels using only the JPEG chips. While the labelers were likely given both file versions for the chips, viewing the JPEG version of the chips is easier. The TIFF images required some normalization to make it visible to the human eye. As an unfortunate result, any discrepancies between the file versions favored the JPEG chips. Although the exact extent of misconfigured labels between the file types is unclear, dozens of such conflicts were easily spotted throughout the dataset. The resulting noise proved to be a major challenge in producing accurate results with even our most complex models using either TIFF files.
+Deep learning architectures for performing object recognition compute a probability distribution over labels, and then predict the label that is most likely. In contrast, our goal was to predict a set of labels for each image, which can be done by computing the probability for each individual label, and then predicting all labels whose probabilities are above a threshold. Our general approach to this problem was to take a successful object recognition model ([ResNet50](https://arxiv.org/abs/1512.03385)), and modify it for the task of multi-label classification. To do this, we only needed to change the final activation and loss functions.
+In particular, we switched from using a softmax to a sigmoid activation function, and from a categorical cross entropy to a binary cross entropy loss function.
 
-### Discussion
+As is standard practice, we fine-tuned a model pre-trained on the Imagenet dataset in order to leverage what was learned on a prior, related task and thereby speed up training. Since satellite images do not have a canonical orientation, we were able to augment our training set using 90 degree rotations and vertical flips, in addition to the horizontal flips that are commonly used . To optimize models, we mainly used the Adam optimizer with an initial learning rate of 10e-3 and divided the learning rate by 10 at the 1/3rd and 2/3rd mark.
 
-Many techniques that we tried did not increase our F2 score on the Amazon dataset. In several cases, we believe that the F2 score metric had unintentional effects on what constituted an accurate result. For example, we tried creating separate networks with different output layers for atmospheric labels versus the other labels. As there can be only one correct atmospheric label, it seemed that a softmax layer would output better predictions than a sigmoid layer. Although counterintuitive to our expectation, this did not yield improved results. The metric places greater value on predicions with both correct and incorrect labels more than predictions which do not have the correct label at all. We also had experiments that by oversampling rarer labels during training. Unfortunately, this did not improve our score. We suspect that the competition's method of calculating F2 score simply did not place a high value on the correct identification of the rarer labels. Even if our predictions were more accurate for these uncommon labels, it may have come at a cost to our overall F2 score across all the samples.
+If we were simply trying to maximize accuracy, we could have fixed the decision threshold for each label at a probability of 0.5. But, because the goal was to optimize F2 score, which favors recall, we needed to optimize the decision threshold for each label. So, after training the neural network, we used coordinate ascent to optimize the F2 score with respect to each decision threshold.
 
-Sometimes it takes a clever idea or an unorthodox breakthrough to push the accuracy of a predictive model past all its competitors. In this particular Amazon Kaggle competition, vanilla machine learning solutions were the best performing.
+To eke out a little bit more performance, we made predictions using an ensemble of models. An ensemble is a set of models, whose individual predictions are combined together by voting or averaging. By exploiting the "wisdom of crowds," a diverse ensemble can make more accurate predictions than a single model. Therefore, we combined five [ResNet50](https://arxiv.org/abs/1512.03385), five [DenseNet121](https://arxiv.org/abs/1608.06993), and five [Inception v3](https://arxiv.org/abs/1512.00567) models using majority voting.
 
-Kaggle competitions are often won by very slim margins. In the case of the Amazon basin data, we spent a large portion of our development time trialing different methods of utilizing the TIFF images and postprocessing our predictions. Kaggle competitions incentize improving your position on the public leaderboard. The score for the public leaderboard was calculated using 66% of the testing chips. The winner, however, is determined by the final private leaderboard score. This score uses the remaining 34% of the testing data and requires that the model appropriately combat overfitting to the public testing data too much. Since the exact private leaderboard performance is unknown to all competitors until the competition's deadline, generalizing the model is crucial to a high Kaggle rank. Once you have a decent model, it takes great effort to make even small improvements. For the Amazon data, progress was further hampered by the unexpectedly noisy data. Of course, many techniques or tools that did not improve ourscore on the Amazon dataset remain useful for the scene tagging task and within Raster Vision.
+## Results
 
-### Future Work
+We placed 23rd overall out of nearly a thousand teams with a private leaderboard F2 score of 0.93154. The winning Kaggler, `bestfitting`, obtained a score of 0.93318, and a discussion of his approach can be found in his [solution summary](http://blog.kaggle.com/2017/10/17/planet-understanding-the-amazon-from-space-1st-place-winners-interview/).
 
-The open-source project repository for Raster Vision can be found [here](https://github.com/azavea/raster-vision/). We are currently incorporating object detection into Raster Vision with a particular focus on strong performance for aerial and satellite imagery.
+For a more qualitative look at our results, here are some chips with labels predicted by our best single-model network. In this figure, the ground truth labels (ie. assigned by humans) for the Planet Kaggle dataset are bolded. Green bolded labels are correct. Unbolded and uncolored labels are false positives that have been incorrectly predicted for the chip. Red bolded labels are false negatives and are incorrectly missing from the predictions.
+
+![Example tagging](imgs/debug_plots_labeled.png)
+<p align="center">Source: <a href="https://github.com/azavea/raster-vision/">Raster Vision</a></p>
+
+## Discussion
+
+As is often the case when developing machine learning models, many of the ideas we tried did not improve the score. Here are some of our unsuccessful attempts.
+* Training a separate network to predict the atmospheric labels using a softmax activation function to exploit the fact that only one atmospheric label can be valid for an image.
+* Training a separate network with more regularization for images with rare labels.
+* Using more aggressive lossy transformations such as non-90 degree rotations and scaling.
+* Oversampling images with rare labels.
+* Deciding whether to use the TIFF or JPEG version of a chip by predicting how misaligned they were.
+
+Sometimes it takes a clever idea or an unorthodox breakthrough to push the accuracy of a predictive model past all its competitors, but in this particular competition, approaches using relatively standard techniques worked very well.
+
+By participating in this Kaggle competition, we gained access to an interesting dataset and got a sense of how well our system works. On the other hand, in some ways the incentives provided by the contest were misaligned with our own.  Kaggle competitions are often won by very slim margins, which rewards complex ideas that are difficult to implement, and only add a negligible amount of performance. Instead, we are more interested in more simple, scalable approaches.
+
+Furthermore, this contest used a scoring metric which effectively hid performance on the rare labels which we were more interested in. The contest score was computed by taking the F2 score for each sample, and then averaging over them. Because most of the samples had the easy to classify `primary` label, the final score was dominated by performance on this label. To examine how well we did on individual labels, we computed a per-label F2 scores on a validation dataset. When computing the score this way, we found that the average F2 score for the rare labels was 0.48, much lower than our contest score of 0.93.
+
+Now that the competition is over, we have switched focus to the tasks of object detection and counting, and integrating computer vision into [Raster Foundry](https://www.rasterfoundry.com/), which is Azavea's product for storing, analyzing, and visualizing aerial and satellite imagery.
