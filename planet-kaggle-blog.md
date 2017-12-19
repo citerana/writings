@@ -7,7 +7,7 @@ By Annie Zhao and Lewis Fishgold
 ![](imgs/chipdesc.jpg)
 <p align="center">Source: <a href="https://www.kaggle.com/c/planet-understanding-the-amazon-from-space/data">Planet</a></p>
 
-This past summer, [Planet](http://www.planet.com) launched the [Understanding the Amazon from Space](https://www.kaggle.com/c/planet-understanding-the-amazon-from-space)  Kaggle competition. They provided over 100,000 chips from large images taken by a flock of satellites over the Amazon basin in 2016. These 40,000 training and 60,000 testing chips were given in both 3-band RGB JPEG and four band IR-RBG TIFF formats. Using crowd-sourced labor, each training chip was assigned a set of ground truth labels indicating the types of land use appearing in the chip. The goal of the contest was to implement a classifier to predict the set of labels for each of the testing chips. The quality of the predictions was measured using the F2 score, which is a weighted average of precision and recall, with greater emphasis on recall.
+This past summer, [Planet](http://www.planet.com) launched the [Understanding the Amazon from Space](https://www.kaggle.com/c/planet-understanding-the-amazon-from-space)  Kaggle competition. They provided over 100,000 chips extracted from large images taken by a flock of satellites over the Amazon basin in 2016. The 40,000 training and 60,000 testing chips were given in both 3-band RGB JPEG and four band IR-RBG TIFF formats. Using crowd-sourced labor, each training chip was assigned a set of ground truth labels indicating the types of land use appearing in the chip. The goal of the contest was to implement a classifier to predict the set of labels for each of the testing chips. The quality of the predictions was measured using the F2 score, which is a weighted average of precision and recall, with greater emphasis on recall.
 
 For the Amazon images, there were 17 possible labels, which could be broadly split into three categories.
 
@@ -15,13 +15,13 @@ For the Amazon images, there were 17 possible labels, which could be broadly spl
 2. **common labels**: primary, water, habitation, agriculture, road, cultivation and bare ground
 3. **rare labels**: artisinal mine, blooming, blow down, conventional mine, selective logging and slash burn.
 
-At Azavea, we have been using deep learning to analyze satellite and aerial imagery as part of the [Raster Vision](https://github.com/azavea/raster-vision) project. In a previous [blog post](https://www.azavea.com/blog/2017/05/30/deep-learning-on-aerial-imagery/), we discuss our work on semantic segmentation. This contest provided us with a challenging opportunity to expand our capabilities and experiment with multi-label image classification of satellite imagery.
+At Azavea, we have been using deep learning to analyze satellite and aerial imagery as part of the [Raster Vision](https://github.com/azavea/raster-vision) project. In a previous [blog post](https://www.azavea.com/blog/2017/05/30/deep-learning-on-aerial-imagery/), we discussed our work on semantic segmentation. This contest provided us with a challenging opportunity to extend our capabilities and experiment with multi-label image classification.
 
 ### Dataset Challenges
 
 #### Ambiguous and Rare Labels
 
-Ideally, the criteria for assigning a label are clear and distinct, and consensus about the ground truth labeling is easily attained. Unfortunately, the Planet dataset has many ambiguous labels which are difficult for people to assign.
+Ideally, the criteria for assigning a label are clear and distinct, and consensus about the ground truth labeling is easily attained. Unfortunately, the Planet dataset has many ambiguous labels which are difficult even for people to assign.
 
 In addition, the labels in this dataset were quite varied in frequency. The `primary` label was by far the most common, appearing in around 40,000 of the provided chips. On the other hand, rare labels like `conventional mining` and `blow down` only appeared a few hundred times each. With so few examples of the rare labels, it was hard to make accurate predictions.
 
@@ -46,12 +46,12 @@ In the figure below, the left hand column displays the JPEG chip, while the righ
 
 ## Our Approach
 
-Deep learning architectures for performing object recognition compute a probability distribution over labels, and then predict the label that is most likely. In contrast, our goal was to predict a set of labels for each image, which can be done by computing the probability for each individual label, and then predicting all labels whose probabilities are above a threshold. Our general approach to this problem was to take a successful object recognition model ([ResNet50](https://arxiv.org/abs/1512.03385)), and modify it for the task of multi-label classification. To do this, we only needed to change the final activation and loss functions.
+Deep learning models for performing object recognition compute a probability distribution over labels, and then predict the label that is most likely. In contrast, our goal was to do multi-label classification, to predict a set of labels for each image. This can be done by computing a probability distribution for each individual label, and then predicting all labels whose probabilities are above a threshold. Our general approach to this problem was to take a successful object recognition model ([ResNet50](https://arxiv.org/abs/1512.03385)), and modify it for the task of multi-label classification. To do this, we only needed to change the final activation and loss functions.
 In particular, we switched from using a softmax to a sigmoid activation function, and from a categorical cross entropy to a binary cross entropy loss function.
 
 As is standard practice, we fine-tuned a model pre-trained on the Imagenet dataset in order to leverage what was learned on a prior, related task and thereby speed up training. Since satellite images do not have a canonical orientation, we were able to augment our training set using 90 degree rotations and vertical flips, in addition to the horizontal flips that are commonly used . To optimize models, we mainly used the Adam optimizer with an initial learning rate of 10e-3 and divided the learning rate by 10 at the 1/3rd and 2/3rd mark.
 
-If we were simply trying to maximize accuracy, we could have fixed the decision threshold for each label at a probability of 0.5. But, because the goal was to optimize F2 score, which favors recall, we needed to optimize the decision threshold for each label. So, after training the neural network, we used coordinate ascent to optimize the F2 score with respect to each decision threshold.
+The F2 score, which favors recall, is not differentiable, so we were unable to use it directly as the loss function. Instead, we trained the model using binary cross entropy (which optimizes for accuracy, in a sense), and then optimized the decision thresholds in order to maximize the F2 score. The decision thresholds determine how high the probability needs to be for each label to be predicted, and we used coordinate ascent to optimize the F2 score with respect to each decision threshold.
 
 To eke out a little bit more performance, we made predictions using an ensemble of models. An ensemble is a set of models, whose individual predictions are combined together by voting or averaging. By exploiting the "wisdom of crowds," a diverse ensemble can make more accurate predictions than a single model. Therefore, we combined five [ResNet50](https://arxiv.org/abs/1512.03385), five [DenseNet121](https://arxiv.org/abs/1608.06993), and five [Inception v3](https://arxiv.org/abs/1512.00567) models using majority voting.
 
@@ -75,8 +75,8 @@ As is often the case when developing machine learning models, many of the ideas 
 
 Sometimes it takes a clever idea or an unorthodox breakthrough to push the accuracy of a predictive model past all its competitors, but in this particular competition, approaches using relatively standard techniques worked very well.
 
-By participating in this Kaggle competition, we gained access to an interesting dataset and got a sense of how well our system works. On the other hand, in some ways the incentives provided by the contest were misaligned with our own.  Kaggle competitions are often won by very slim margins, which rewards complex ideas that are difficult to implement, and only add a negligible amount of performance. Instead, we are more interested in more simple, scalable approaches.
+By participating in this Kaggle competition, we gained access to an interesting dataset and got a sense of how well our code works. On the other hand, in some ways the incentives provided by the contest were misaligned with our own.  Kaggle competitions are often won by very slim margins, which often rewards complex ideas that are difficult to implement, and add a negligible amount of performance. In contrast, our preference is for simpler, more scalable approaches.
 
 Furthermore, this contest used a scoring metric which effectively hid performance on the rare labels which we were more interested in. The contest score was computed by taking the F2 score for each sample, and then averaging over them. Because most of the samples had the easy to classify `primary` label, the final score was dominated by performance on this label. To examine how well we did on individual labels, we computed a per-label F2 scores on a validation dataset. When computing the score this way, we found that the average F2 score for the rare labels was 0.48, much lower than our contest score of 0.93.
 
-Now that the competition is over, we have switched focus to the tasks of object detection and counting, and integrating computer vision into [Raster Foundry](https://www.rasterfoundry.com/), which is Azavea's product for storing, analyzing, and visualizing aerial and satellite imagery.
+Now that the competition is over, we have switched focus to the tasks of object detection and counting, and integrating computer vision into [Raster Foundry](https://www.rasterfoundry.com/), an Azavea product which supports the  storage, analysis, and visualization of aerial and satellite imagery.
